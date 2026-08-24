@@ -1,0 +1,84 @@
+name: Generar plan de desarrollo desde Issue
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+jobs:
+  generar_plan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚚 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 🧠 Planificador — generar plan estructurado
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          show_full_output: true
+          settings: |
+            {
+              "permissions": {
+                "allow": ["Bash(gh issue comment *)", "Write"]
+              }
+            }
+          prompt: |
+            Usa el subagente planificador definido en .claude/agents/planificador.md
+            para analizar la siguiente solicitud (Issue #${{ github.event.issue.number }}
+            de este repo, título: "${{ github.event.issue.title }}") y generar el prompt
+            de desarrollo estructurado según el formato de salida que ese subagente
+            define (Objetivo, Alcance, Contexto, Archivos a tocar, Restricciones
+            de calidad, Criterio de validación, Preguntas abiertas si aplica).
+
+            IMPORTANTE sobre cómo invocar al subagente: este es un job de GitHub
+            Actions de un solo turno, sin sesión interactiva después — NO existe un
+            "más tarde" en el que puedas continuar. Invoca al subagente planificador
+            de forma SÍNCRONA/bloqueante (NO en segundo plano, NO como tarea async) y
+            espera su resultado completo dentro de este mismo turno antes de seguir.
+            Si lo lanzas en segundo plano y terminas tu turno diciendo "seguirá en
+            background", el job se completa igual y el plan nunca se genera ni se
+            publica — eso ya pasó una vez y es exactamente lo que no debes repetir.
+
+            El cuerpo completo del Issue ya está incluido abajo, tal cual. NO ejecutes
+            `gh issue view`, git, ni ningún otro comando para volver a consultarlo —
+            todo lo que necesitas ya está aquí o se lee con Read/Grep/Glob dentro del
+            repo ya clonado.
+
+            Antes de planificar, lee CLAUDE.md y los skills relevantes en
+            .claude/skills/ tal como indica el subagente planificador.
+
+            NO escribas ni modifiques código. NO abras rama ni Pull Request.
+
+            Cuando el subagente planificador te devuelva el plan, tu ÚLTIMO paso
+            obligatorio es publicarlo como comentario en este mismo Issue, para que
+            un humano lo apruebe antes de que empiece cualquier desarrollo. El único
+            comando de Bash autorizado en este entorno es `gh issue comment` — usa
+            exactamente:
+
+            ```
+            gh issue comment ${{ github.event.issue.number }} --body-file <ruta-a-un-archivo-temporal-con-el-plan>
+            ```
+
+            (escribe el plan a un archivo temporal con la herramienta Write antes de
+            correr ese comando). Ningún otro comando de Bash está autorizado y quedará
+            bloqueado — no lo intentes. La tarea no está completa hasta que el
+            comentario quede publicado en el Issue.
+
+            CRÍTICO: ejecutá `gh issue comment` **exactamente una sola vez, con el plan
+            completo ya terminado**. No lo uses para probar, para verificar que el
+            comando funciona, ni para publicar un borrador corto antes del definitivo —
+            cada ejecución publica un comentario real y visible, no hay forma de
+            "probar en seco". Si el plan es largo, igual va completo en un solo
+            `--body-file`, nunca partido en varias llamadas. Escribí el archivo
+            completo con Write, revisalo vos mismo antes, y recién ahí ejecutá el
+            comando una única vez.
+
+            Cuerpo del Issue:
+            ${{ github.event.issue.body }}

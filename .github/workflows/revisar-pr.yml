@@ -1,0 +1,131 @@
+name: Revisar PR abierto por Routine
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  revisar_pr:
+    if: startsWith(github.head_ref, 'claude/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚚 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Traer el diff del PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }} > pr-diff.txt
+          echo "Líneas del diff: $(wc -l < pr-diff.txt)"
+
+      - name: 🔍 Revisión con subagentes
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          show_full_output: true
+          settings: |
+            {
+              "permissions": {
+                "allow": ["Bash(gh pr comment *)", "Bash(curl *)", "Write"]
+              }
+            }
+          prompt: |
+            Estás revisando el PR #${{ github.event.pull_request.number }} del repo
+            `${{ github.repository }}`, rama `${{ github.head_ref }}` contra `main`,
+            título: "${{ github.event.pull_request.title }}". Este PR tiene
+            ${{ github.event.pull_request.commits }} commit(s) hasta ahora.
+
+            El diff completo de este PR ya está escrito en el archivo pr-diff.txt en
+            la raíz de este mismo checkout (ruta relativa al repo, NO en /tmp — fuera
+            del checkout no tienes permiso de lectura automático) — léelo con la
+            herramienta Read antes de continuar. NO ejecutes `gh pr diff`, `git diff`
+            ni ningún otro comando para volver a obtenerlo, ya lo tienes.
+
+            Corre estos dos subagentes de proyecto sobre ese diff, usando la
+            herramienta Task con el `subagent_type` exacto (ya están definidos en
+            .claude/agents/ de este repo, invócalos directamente):
+
+            1. `revisor-codigo` — revisión de calidad del diff.
+            2. `documentador` — para confirmar si README.md necesita actualizarse
+               (dile explícitamente que NO aplique ningún cambio, solo diagnostique).
+
+            NO invoques `tester` — no hay servidor local disponible en este entorno
+            cloud. Este proyecto no tiene subagente de dominio propio
+            (`validador-metricas` es específico de `micomercio_bi_dashboard`, no
+            aplica acá) — no lo invoques.
+
+            IMPORTANTE — no intentes verificar nada corriendo servicios: este entorno
+            de GitHub Actions no tiene Node/npm instalado como parte de este job, y
+            aunque lo tuviera, no hay backend real (`auth.micomercio.co`) disponible
+            desde acá. NO intentes `npm run dev`, `npm run build`, ni ningún comando
+            para "probar" el cambio en ejecución — ninguno de esos comandos está
+            autorizado y vas a perder tiempo del job entero chocando contra el muro de
+            aprobación sin que nadie pueda aprobarlo. Tu única fuente de verdad es la
+            lectura estática del código en pr-diff.txt y el resto del checkout — toda
+            la revisión se hace por lectura, nunca por ejecución.
+
+            IMPORTANTE sobre cómo invocar cada subagente: este es un job de GitHub
+            Actions de un solo turno, sin sesión interactiva después — NO existe un
+            "más tarde" en el que puedas continuar. Invoca cada subagente de forma
+            SÍNCRONA/bloqueante (NO en segundo plano, NO como tarea async) y espera
+            su resultado completo antes de seguir con el siguiente.
+
+            Cuando tengas los tres resultados, escribe UN solo comentario consolidado
+            (más severo primero, con secciones claras por subagente, marcando
+            explícitamente cada hallazgo como REAL/CRÍTICO o COSMÉTICO/INFORMATIVO)
+            a un archivo temporal con Write, y publícalo con:
+
+            ```
+            gh pr comment ${{ github.event.pull_request.number }} --body-file <ruta-del-archivo>
+            ```
+
+            Después de publicar el comentario, decidí si corresponde disparar una
+            corrección automática, con esta regla exacta:
+
+            - Si NO hay ningún hallazgo REAL/CRÍTICO (solo cosméticos, informativos, o
+              ninguno) → no hagas nada más, terminaste.
+            - Si SÍ hay al menos un hallazgo REAL/CRÍTICO, pero este PR ya tiene más de
+              1 commit (${{ github.event.pull_request.commits }} > 1, es decir ya se
+              corrigió automáticamente antes) → no dispares otra corrección, ya se usó
+              el único intento automático permitido; deja el comentario para que un
+              humano decida. Terminaste.
+            - Si SÍ hay al menos un hallazgo REAL/CRÍTICO Y este PR tiene exactamente 1
+              commit (nunca se corrigió automáticamente antes) → disparás la Routine de
+              corrección UNA sola vez, ejecutando exactamente:
+
+              ```
+              curl -X POST "https://api.anthropic.com/v1/claude_code/routines/${{ vars.ROUTINE_CORREGIR_ID }}/fire" \
+                -H "Authorization: Bearer $FIX_PR_ROUTINE_API_TOKEN" \
+                -H "anthropic-beta: experimental-cc-routine-2026-04-01" \
+                -H "anthropic-version: 2023-06-01" \
+                -H "Content-Type: application/json" \
+                -d "{\"text\": \"PR #${{ github.event.pull_request.number }} tiene hallazgos reales de revisión pendientes de corregir, ver el comentario de revisión más reciente en el PR.\"}"
+              ```
+
+            `curl` y `gh pr comment` son los únicos comandos de Bash autorizados en
+            este entorno — cualquier otro quedará bloqueado, no lo intentes. La tarea
+            no está completa hasta que el comentario de revisión quede publicado (y,
+            si aplica según la regla de arriba, la corrección disparada).
+
+            CRÍTICO: ejecutá `gh pr comment` **exactamente una sola vez, con el
+            comentario consolidado completo ya terminado**. No lo uses para probar, ni
+            para publicar un borrador corto antes del definitivo — cada ejecución
+            publica un comentario real y visible en el PR, no hay forma de "probar en
+            seco". Si el comentario es largo, igual va completo en un solo
+            `--body-file`, nunca partido en varias llamadas.
+
+            NO escribas código, NO corrijas nada tú mismo, NO abras otra rama ni PR —
+            tu única salida es el comentario de revisión y, cuando corresponda, el
+            disparo de la Routine de corrección.
+        env:
+          FIX_PR_ROUTINE_API_TOKEN: ${{ secrets.FIX_PR_ROUTINE_API_TOKEN }}
