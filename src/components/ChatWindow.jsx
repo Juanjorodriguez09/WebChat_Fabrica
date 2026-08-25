@@ -5,7 +5,7 @@ import { sendMessage } from '../services/api';
 import { processPdf } from '../services/pdf';
 import logoUrl from '../../public/logo.png';
 
-const WELCOME = '👋 Hola, soy el asistente de *MiComercio*. Puedo ayudarte con ventas, inventario, gastos, análisis financiero y más. ¿En qué te ayudo?';
+const WELCOME = '👋 Soy el asistente de *MiComercio*. Te ayudo con ventas, inventario y gastos. ¿En qué te ayudo?';
 
 export default function ChatWindow({ onClose }) {
   const [messages, setMessages] = useState([
