@@ -8,7 +8,7 @@ import logoUrl from '../../public/logo.png';
 const WELCOME = '👋 Soy el asistente de *MiComercio*. Te ayudo con ventas, inventario y gastos. ¿En qué te ayudo?';
 const CONNECTION_ERROR = '🔌 No pudimos conectar con el servidor. Intenta de nuevo.';
 
-export default function ChatWindow({ onClose }) {
+export default function ChatWindow({ onClose, onMinimize, hidden }) {
   const [messages, setMessages] = useState([
     { id: 1, role: 'bot', text: WELCOME },
   ]);
@@ -119,6 +119,7 @@ export default function ChatWindow({ onClose }) {
   return (
     <div
       className="chat-window"
+      style={hidden ? { display: 'none' } : undefined}
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleWindowDrop}
     >
@@ -128,6 +129,9 @@ export default function ChatWindow({ onClose }) {
           <div className="header-title">MiComercio Asistente</div>
           <div className="header-sub">En línea</div>
         </div>
+        {onMinimize && (
+          <button className="header-minimize-btn" onClick={onMinimize} title="Minimizar">─</button>
+        )}
         {onClose && (
           <button className="header-close-btn" onClick={onClose} title="Cerrar">✕</button>
         )}
