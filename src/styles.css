@@ -301,7 +301,8 @@ body {
   box-shadow: 0 6px 20px rgba(26,115,232,0.5);
 }
 
-.header-close-btn {
+.header-close-btn,
+.header-minimize-btn {
   background: none;
   border: none;
   color: white;
@@ -313,7 +314,8 @@ body {
   line-height: 1;
 }
 
-.header-close-btn:hover {
+.header-close-btn:hover,
+.header-minimize-btn:hover {
   opacity: 1;
   background: rgba(255,255,255,0.15);
 }
