@@ -6,6 +6,7 @@ import { processPdf } from '../services/pdf';
 import logoUrl from '../../public/logo.png';
 
 const WELCOME = '👋 Soy el asistente de *MiComercio*. Te ayudo con ventas, inventario y gastos. ¿En qué te ayudo?';
+const CONNECTION_ERROR = '❌ No pudimos conectar con el servidor. Intenta de nuevo.';
 
 export default function ChatWindow({ onClose }) {
   const [messages, setMessages] = useState([
@@ -37,7 +38,7 @@ export default function ChatWindow({ onClose }) {
         addMessage({ role: 'bot', text: res.message || '✅ Listo.' });
       }
     } catch {
-      addMessage({ role: 'bot', text: '❌ Error de conexión. Intenta de nuevo.' });
+      addMessage({ role: 'bot', text: CONNECTION_ERROR });
     } finally {
       setLoading(false);
     }
@@ -77,7 +78,7 @@ export default function ChatWindow({ onClose }) {
               addMessage({ role: 'bot', text: res.message || '✅ Listo.' });
             }
           } catch {
-            addMessage({ role: 'bot', text: '❌ Error de conexión. Intenta de nuevo.' });
+            addMessage({ role: 'bot', text: CONNECTION_ERROR });
           }
         } catch (err) {
           console.error('PDF error:', err);
