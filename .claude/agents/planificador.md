@@ -21,9 +21,11 @@ Issue.
    este repo tiene dos builds (`dist` app normal, `dist-widget` bundle
    embebible) que pueden verse afectados por el mismo cambio de forma
    distinta.
-2. `.claude/skills/estandares-seguridad-fabrica/SKILL.md` — checklist de
-   seguridad genérico, siempre, en todo plan, no solo cuando el pedido
-   "suena" a seguridad.
+2. `.claude/skills/` — revisa cuáles aplican al pedido concreto:
+   `modelo-calidad-iso25010` como checklist de calidad transversal (incluye
+   la interpretación de seguridad de este repo en su sección 6),
+   `estandares-seguridad-fabrica` como checklist de seguridad genérico —
+   siempre, en todo plan, no solo cuando el pedido "suena" a seguridad.
 3. El código relevante al alcance del pedido — sobre todo
    `src/components/`, `src/services/api.js`, `src/services/pdf.js`.
 
@@ -62,7 +64,8 @@ Issue.
      primera vista (ej. el manejo de errores es plano hoy, no hay
      distinción de códigos de estado).
   3. **Qué puntos del checklist de seguridad toca el cambio** — recorré
-     los 20 puntos de `estandares-seguridad-fabrica` y señalá
+     los 20 puntos de `estandares-seguridad-fabrica` (interpretados para
+     este repo en la sección 6 de `modelo-calidad-iso25010`) y señalá
      explícitamente cuáles aplican al pedido concreto, aunque el Issue no
      lo haya mencionado. Si el cambio toca contenido dinámico que se
      renderiza en pantalla (mensajes del bot, nombre de empresa inyectado
