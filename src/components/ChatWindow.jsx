@@ -6,7 +6,7 @@ import { processPdf } from '../services/pdf';
 import logoUrl from '../../public/logo.png';
 
 const WELCOME = '👋 Soy el asistente de *MiComercio*. Te ayudo con ventas, inventario y gastos. ¿En qué te ayudo?';
-const CONNECTION_ERROR = '🔌 No pudimos conectar con el servidor. Intenta de nuevo.';
+const CONNECTION_ERROR = '🔌 No pudimos conectar con el servidor. Revisa tu conexión a internet e intenta de nuevo.';
 
 export default function ChatWindow({ onClose, onMinimize, hidden }) {
   const [messages, setMessages] = useState([
