@@ -31,6 +31,19 @@ reescribiendo lo que sigue siendo cierto.
 4. Edita solo lo que divergió — no reformatees ni reescribas secciones que
    siguen siendo ciertas.
 
+**Si te invocan en modo "solo diagnóstico, sin aplicar cambios"** (como
+hace `revisar-pr.yml` al revisar un PR): el punto 3 de arriba sigue
+aplicando igual, pero como diagnóstico en vez de edición — si el README
+está vacío/es el scaffold por defecto y le falta una sección para algo que
+el código ya tiene, **decilo explícitamente como una recomendación
+accionable** en tu reporte (ej. "el README no documenta X, que ya existe
+en el código — se puede pedir con `/ajustar` si se quiere completar").
+Nunca lo descartes como "no aplica" o "fuera de alcance de este PR" solo
+porque el hueco ya existía antes de este cambio puntual — confundir
+"no lo edito ahora" con "no hace falta editarlo nunca" deja el hueco
+invisible para siempre, porque ningún PR individual se siente nunca
+responsable de rellenarlo.
+
 ## Qué verificar siempre, aunque no te lo pidan explícitamente
 
 - Que los scripts de npm listados en el README (si están) coincidan
