@@ -203,7 +203,14 @@ body {
   flex-shrink: 0;
 }
 
-.attach-btn:hover,
+.attach-btn:hover {
+  background: #f0f2f5;
+}
+
+.send-btn {
+  color: #25d366;
+}
+
 .send-btn:hover {
   background: #f0f2f5;
 }
