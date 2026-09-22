@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
-import { sendMessage } from '../services/api';
+import RatingPrompt from './RatingPrompt';
+import { sendMessage, sendRating } from '../services/api';
 import { processPdf } from '../services/pdf';
 import logoUrl from '../../public/logo.png';
 
@@ -24,6 +25,20 @@ export default function ChatWindow({ onClose, onMinimize, hidden }) {
   };
 
   const [pendingConfirmation, setPendingConfirmation] = useState(false);
+  const [showRating, setShowRating] = useState(false);
+
+  const handleCloseClick = () => setShowRating(true);
+
+  const handleRatingSubmit = (rating) => {
+    sendRating(rating).catch(() => {});
+    setShowRating(false);
+    onClose();
+  };
+
+  const handleRatingSkip = () => {
+    setShowRating(false);
+    onClose();
+  };
 
   const doSend = async (apiPayload, userMsg) => {
     addMessage(userMsg);
@@ -133,9 +148,13 @@ export default function ChatWindow({ onClose, onMinimize, hidden }) {
           <button className="header-minimize-btn" onClick={onMinimize} title="Minimizar">─</button>
         )}
         {onClose && (
-          <button className="header-close-btn" onClick={onClose} title="Cerrar">✕</button>
+          <button className="header-close-btn" onClick={handleCloseClick} title="Cerrar">✕</button>
         )}
       </div>
+
+      {showRating && (
+        <RatingPrompt onSubmit={handleRatingSubmit} onSkip={handleRatingSkip} />
+      )}
 
       <div className="messages">
         {messages.map(msg => (

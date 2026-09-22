@@ -23,6 +23,7 @@ body {
 
 /* ── Chat Window ── */
 .chat-window {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 420px;
@@ -270,6 +271,87 @@ body {
 .btn-confirm { background: #25d366; color: #fff; }
 .btn-cancel  { background: #ff4d4f; color: #fff; }
 .btn-confirm:hover, .btn-cancel:hover { opacity: 0.85; }
+
+/* ── Rating prompt ── */
+.mc-rating-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(255,255,255,0.96);
+}
+
+.mc-rating-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+}
+
+.mc-rating-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.mc-rating-stars {
+  display: flex;
+  gap: 6px;
+}
+
+.mc-rating-star {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 32px;
+  line-height: 1;
+  color: #f5a623;
+  padding: 0;
+}
+
+.mc-rating-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.mc-rating-skip,
+.mc-rating-confirm {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.mc-rating-skip {
+  background: #f0f2f5;
+  color: #444;
+}
+
+.mc-rating-confirm {
+  background: #1a73e8;
+  color: #fff;
+}
+
+.mc-rating-skip:hover,
+.mc-rating-confirm:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.mc-rating-confirm:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
 
 /* ── Widget flotante ── */
 .mc-widget-root {
