@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import RatingPrompt from './RatingPrompt';
@@ -9,7 +9,7 @@ import logoUrl from '../../public/logo.png';
 const WELCOME = '👋 Soy el asistente de *MiComercio*. Te ayudo con ventas, inventario y gastos. ¿En qué te ayudo?';
 const CONNECTION_ERROR = '🔌 No pudimos conectar con el servidor. Revisa tu conexión a internet e intenta de nuevo.';
 
-export default function ChatWindow({ onClose, onMinimize, hidden }) {
+const ChatWindow = forwardRef(function ChatWindow({ onClose, onMinimize, hidden }, ref) {
   const [messages, setMessages] = useState([
     { id: 1, role: 'bot', text: WELCOME },
   ]);
@@ -29,8 +29,12 @@ export default function ChatWindow({ onClose, onMinimize, hidden }) {
 
   const handleCloseClick = () => setShowRating(true);
 
+  useImperativeHandle(ref, () => ({
+    requestClose: handleCloseClick,
+  }));
+
   const handleRatingSubmit = (rating) => {
-    sendRating(rating).catch(() => {});
+    sendRating(rating).catch(err => console.error('Error al enviar calificación:', err));
     setShowRating(false);
     onClose();
   };
@@ -127,6 +131,7 @@ export default function ChatWindow({ onClose, onMinimize, hidden }) {
 
   const handleWindowDrop = (e) => {
     e.preventDefault();
+    if (showRating) return;
     const file = e.dataTransfer.files[0];
     if (file && !loading) handleSend({ file });
   };
@@ -180,4 +185,6 @@ export default function ChatWindow({ onClose, onMinimize, hidden }) {
       <MessageInput onSend={handleSend} loading={loading || pendingConfirmation} />
     </div>
   );
-}
+});
+
+export default ChatWindow;
