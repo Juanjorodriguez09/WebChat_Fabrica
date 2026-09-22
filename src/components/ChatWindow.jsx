@@ -1,14 +1,15 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
-import { sendMessage } from '../services/api';
+import RatingPrompt from './RatingPrompt';
+import { sendMessage, sendRating } from '../services/api';
 import { processPdf } from '../services/pdf';
 import logoUrl from '../../public/logo.png';
 
 const WELCOME = '🤖 Soy el asistente de *MiComercio*. Te ayudo con ventas, inventario y gastos. ¿En qué te ayudo?';
 const CONNECTION_ERROR = '🔌 No pudimos conectar con el servidor. Revisa tu conexión a internet e intenta de nuevo.';
 
-export default function ChatWindow({ onClose, onMinimize, hidden }) {
+const ChatWindow = forwardRef(function ChatWindow({ onClose, onMinimize, hidden }, ref) {
   const [messages, setMessages] = useState([
     { id: 1, role: 'bot', text: WELCOME },
   ]);
@@ -24,6 +25,24 @@ export default function ChatWindow({ onClose, onMinimize, hidden }) {
   };
 
   const [pendingConfirmation, setPendingConfirmation] = useState(false);
+  const [showRating, setShowRating] = useState(false);
+
+  const handleCloseClick = () => setShowRating(true);
+
+  useImperativeHandle(ref, () => ({
+    requestClose: handleCloseClick,
+  }));
+
+  const handleRatingSubmit = (rating) => {
+    sendRating(rating).catch(err => console.error('Error al enviar calificación:', err));
+    setShowRating(false);
+    onClose();
+  };
+
+  const handleRatingSkip = () => {
+    setShowRating(false);
+    onClose();
+  };
 
   const doSend = async (apiPayload, userMsg) => {
     addMessage(userMsg);
@@ -112,6 +131,7 @@ export default function ChatWindow({ onClose, onMinimize, hidden }) {
 
   const handleWindowDrop = (e) => {
     e.preventDefault();
+    if (showRating) return;
     const file = e.dataTransfer.files[0];
     if (file && !loading) handleSend({ file });
   };
@@ -133,9 +153,13 @@ export default function ChatWindow({ onClose, onMinimize, hidden }) {
           <button className="header-minimize-btn" onClick={onMinimize} title="Minimizar">─</button>
         )}
         {onClose && (
-          <button className="header-close-btn" onClick={onClose} title="Cerrar">✕</button>
+          <button className="header-close-btn" onClick={handleCloseClick} title="Cerrar">✕</button>
         )}
       </div>
+
+      {showRating && (
+        <RatingPrompt onSubmit={handleRatingSubmit} onSkip={handleRatingSkip} />
+      )}
 
       <div className="messages">
         {messages.map(msg => (
@@ -161,4 +185,6 @@ export default function ChatWindow({ onClose, onMinimize, hidden }) {
       <MessageInput onSend={handleSend} loading={loading || pendingConfirmation} />
     </div>
   );
-}
+});
+
+export default ChatWindow;

@@ -37,3 +37,23 @@ export async function sendMessage({ text, imageBase64, imageMime }) {
   if (!res.ok) throw new Error(`Error ${res.status}`);
   return res.json();
 }
+
+export async function sendRating(rating) {
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    throw new Error('Calificación inválida');
+  }
+
+  const body = { ...getSessionContext(), rating };
+
+  const res = await fetch(`${API_URL}/webchat/message`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${API_TOKEN}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  return res.json();
+}
