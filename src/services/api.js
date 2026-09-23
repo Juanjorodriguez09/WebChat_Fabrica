@@ -10,7 +10,7 @@ function getSessionContext() {
   const cfg = (typeof window !== 'undefined' && window.MICOMERCIO_CHAT_CONFIG) || {};
   return {
     sender_id:      cfg.sender_id      || 'webchat-dev',
-    IdEmpresa:      cfg.IdEmpresa      || null,
+    IdEmpresa:      cfg.IdEmpresa      || '140',
     IdSucursal:     cfg.IdSucursal     || null,
     IdCaja:         cfg.IdCaja         || null,
     IdUser:         cfg.IdUser         || null,
