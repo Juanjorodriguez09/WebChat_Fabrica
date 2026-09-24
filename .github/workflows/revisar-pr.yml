@@ -28,6 +28,26 @@ jobs:
           gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }} > pr-diff.txt
           echo "Líneas del diff: $(wc -l < pr-diff.txt)"
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Correr la suite de tests del proyecto (Capa 1)
+        id: tests
+        continue-on-error: true
+        run: |
+          if [ -f package.json ] && node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)" 2>/dev/null; then
+            npm ci
+            npm test > test-output.txt 2>&1
+            echo "resultado=$?" >> "$GITHUB_OUTPUT"
+          else
+            echo "Este proyecto todavía no tiene un script \"test\" configurado en package.json." > test-output.txt
+            echo "resultado=sin_tests" >> "$GITHUB_OUTPUT"
+          fi
+          cat test-output.txt
+
       - name: 🔍 Revisión con subagentes
         uses: anthropics/claude-code-action@v1
         with:
@@ -51,28 +71,40 @@ jobs:
             herramienta Read antes de continuar. NO ejecutes `gh pr diff`, `git diff`
             ni ningún otro comando para volver a obtenerlo, ya lo tienes.
 
+            El resultado REAL de correr la suite de tests del proyecto (si tiene una
+            configurada) ya está en test-output.txt, en la raíz de este checkout —
+            léelo también. El resultado del step se llama "tests", su output
+            "resultado" vale "sin_tests" (el proyecto no tiene script de test
+            todavía, no es un fallo), "0" (todos los tests pasaron), o cualquier otro
+            número (al menos un test falló — REAL/CRÍTICO automático, sin necesidad
+            de que vos lo evalúes: un test que falla es un hecho objetivo, no una
+            opinión).
+
             Corre estos dos subagentes de proyecto sobre ese diff, usando la
             herramienta Task con el `subagent_type` exacto (ya están definidos en
             .claude/agents/ de este repo, invócalos directamente):
 
-            1. `revisor-codigo` — revisión de calidad del diff.
+            1. `revisor-codigo` — revisión de calidad del diff, incluyendo el
+               resultado real de test-output.txt como evidencia.
             2. `documentador` — para confirmar si README.md necesita actualizarse
                (dile explícitamente que NO aplique ningún cambio, solo diagnostique).
 
-            NO invoques `tester` — no hay servidor local disponible en este entorno
-            cloud. Este proyecto no tiene subagente de dominio propio
-            (`validador-metricas` es específico de `micomercio_bi_dashboard`, no
-            aplica acá) — no lo invoques.
+            NO invoques `tester` acá — necesita un servidor/ambiente real corriendo
+            (`auth.micomercio.co`), que no existe en este job. Esa verificación es
+            otra capa aparte, pendiente de conectar cuando este proyecto tenga
+            despliegue automático (Parte E). Este proyecto no tiene subagente de
+            dominio propio (`validador-metricas` es específico de
+            `micomercio_bi_dashboard`, no aplica acá) — no lo invoques.
 
-            IMPORTANTE — no intentes verificar nada corriendo servicios: este entorno
-            de GitHub Actions no tiene Node/npm instalado como parte de este job, y
-            aunque lo tuviera, no hay backend real (`auth.micomercio.co`) disponible
-            desde acá. NO intentes `npm run dev`, `npm run build`, ni ningún comando
-            para "probar" el cambio en ejecución — ninguno de esos comandos está
-            autorizado y vas a perder tiempo del job entero chocando contra el muro de
-            aprobación sin que nadie pueda aprobarlo. Tu única fuente de verdad es la
-            lectura estática del código en pr-diff.txt y el resto del checkout — toda
-            la revisión se hace por lectura, nunca por ejecución.
+            IMPORTANTE sobre los límites reales de este entorno: este runner SÍ puede
+            correr `npm test`/`npm run build`/`npm run lint` (por eso el step de
+            tests de arriba funciona) — lo que NO tiene es el backend real
+            (`auth.micomercio.co`) disponible, así que cualquier test que dependa de
+            llamadas reales a ese backend va a fallar acá aunque el código esté bien;
+            si ves ese patrón en test-output.txt, señalalo como limitación del
+            entorno, no como hallazgo de calidad. Fuera de eso, tu fuente de verdad
+            es pr-diff.txt y test-output.txt — no inventes resultados que no estén
+            ahí.
 
             IMPORTANTE sobre cómo invocar cada subagente: este es un job de GitHub
             Actions de un solo turno, sin sesión interactiva después — NO existe un
