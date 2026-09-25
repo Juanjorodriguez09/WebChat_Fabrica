@@ -62,7 +62,7 @@ export default function MessageInput({ onSend, loading }) {
         className="attach-btn"
         onClick={() => fileRef.current.click()}
         disabled={loading}
-        title="Adjuntar imagen o PDF"
+        title="Adjuntar una imagen o un archivo PDF"
       >
         📎
       </button>
